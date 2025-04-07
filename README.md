@@ -219,11 +219,3 @@ ProxyPapi/
 Pull up with a PR or suggest a feature — let’s make ProxyPapi the MVP of rate limiting. 😎
 
 ---
-
-## 📄 License
-
-MIT – Go wild (responsibly).
-
----
-
-Let me know when you're ready to fill in the screenshots or want help with docs for queue tracking, analytics, or strategy switching.
