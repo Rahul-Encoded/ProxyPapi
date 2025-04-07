@@ -10,8 +10,8 @@ export interface IApp extends Document {
     windowMs: number;
   };
   appId: string;
-  apiKeyInHeader?: boolean; // Optional: Use Authorization header for API key
-  apiKeyInQuery?: boolean; // Optional: Append API key as query parameter
+  apiKeyInHeader?: boolean; 
+  apiKeyInQuery?: boolean; 
   createdAt: Date;
   updatedAt: Date;
 }
@@ -27,8 +27,8 @@ const AppSchema: Schema<IApp> = new Schema(
       windowMs: { type: Number, required: true },
     },
     appId: { type: String, required: true, unique: true },
-    apiKeyInHeader: { type: Boolean, default: false }, // Default: false
-    apiKeyInQuery: { type: Boolean, default: false }, // Default: false
+    apiKeyInHeader: { type: Boolean, default: false }, 
+    apiKeyInQuery: { type: Boolean, default: false }, 
   },
   {
     timestamps: true,

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { asyncHandler } from "../utils/asyncHandler";
+import { asyncHandler } from "../utils/asyncHandler.utils";
 import User, { IUser } from "../models/User.models";
 
 // Extend the Request type locally

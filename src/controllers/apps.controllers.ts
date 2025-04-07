@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { asyncHandler } from "../utils/asyncHandler";
+import { asyncHandler } from "../utils/asyncHandler.utils";
 import App from "../models/App.models";
 import { Request, Response } from "express";
 import { IUser } from "../models/User.models";

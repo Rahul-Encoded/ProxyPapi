@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
-import { asyncHandler } from "../utils/asyncHandler";
+import { asyncHandler } from "../utils/asyncHandler.utils";
 import User from "../models/User.models";
-import { sendEmail } from "../utils/sendEmail";
+import { sendEmail } from "../utils/sendEmail.utils";
 
 // Register a new user
 export const registerUser = asyncHandler(async (req: Request, res: Response) => {
