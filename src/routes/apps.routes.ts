@@ -8,6 +8,7 @@ router
   .route("/register")
   .post(authenticateApiKey, addApp);
 
-router.route("/apis/:appId/*").all(authenticateApiKey, proxyRequest)
+router.use("/apis/:appId", authenticateApiKey, proxyRequest);
+
 
 export default router;
