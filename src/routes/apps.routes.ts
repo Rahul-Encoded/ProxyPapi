@@ -5,7 +5,6 @@ import { authenticateApiKey } from "../middlewares/auth.middlewares";
 const router = Router();
 
 router
-  .use(authenticateApiKey)
   .route("/register")
   .post(authenticateApiKey, addApp);
 
