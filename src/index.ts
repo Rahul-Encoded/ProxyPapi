@@ -26,6 +26,13 @@ app.get('/', (req, res) => {
     res.status(200).send("Welcome to the ProxyPapi");
 });
 
+//routes import
+import userRouter from "./routes/user.routes"
+
+
+// Add routes
+app.use("/api/v1/user", userRouter)
+
 // Port and database URI
 const port = process.env.PORT || 8000;
 const db = process.env.MONGODB_URI;
