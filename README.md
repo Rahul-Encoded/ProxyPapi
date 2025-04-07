@@ -44,6 +44,7 @@ npm install
 # (Replace values as needed)
 PORT=3000
 MONGODB_URI=mongodb://localhost:27017/proxypapi
+CORS_ORIGIN=http://localhost:51732
 JWT_SECRET=yourSuperSecretKey
 
 # 5. Run the app
