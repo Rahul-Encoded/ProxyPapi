@@ -3,7 +3,6 @@ import bcrypt from "bcrypt";
 import { asyncHandler } from "../utils/asyncHandler";
 import User from "../models/User.models";
 
-
 export const adduser = asyncHandler(async (req, res) => {
   const { email } = req.body;
 

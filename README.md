@@ -197,6 +197,7 @@ ProxyPapi/
 │   ├── routes/
 │   ├── services/
 │   └── utils/
+├── types
 ├── .env
 ├── tsconfig.json
 ├── package.json

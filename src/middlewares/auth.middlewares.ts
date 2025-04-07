@@ -1,9 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import { asyncHandler } from "../utils/asyncHandler";
-import User from "../models/User.models";
+import User, { IUser } from "../models/User.models";
+
+// Extend the Request type locally
+interface CustomRequest extends Request {
+  user?: IUser;
+}
 
 export const authenticateApiKey = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
     const apiKey = req.headers["x-api-key"];
 
     if (!apiKey) {
