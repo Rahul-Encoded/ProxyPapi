@@ -205,6 +205,22 @@ Use the provided Postman collection to test ProxyPapi endpoints:
 - Rate limits are configured at the app level, not the user level.
 - Token Bucket is the first implemented rate-limiting strategy.
 
+---
+
+### 🧱 Git Hygiene: Avoiding the Large File Trap
+
+To prevent GitHub push failures due to large file sizes (like 100MB+), we’ve taken the following precautions:
+
+- **`.gitignore`:**  
+  We've added `data/*` to `.gitignore` to exclude bulky files (like API logs, request data dumps, etc.) from being tracked by Git.
+
+- **`.gitattributes`:**  
+  We’ve initialized [Git LFS (Large File Storage)](https://git-lfs.github.com) to manage any future large files efficiently without clogging the repo. This ensures the repo remains fast and pushable.
+
+These steps help avoid the classic *“File exceeds GitHub’s 100MB limit”* error and keep the repo clean and developer-friendly. 🔥
+
+---
+
 ### 📂 Directory Structure
 
 ```bash
