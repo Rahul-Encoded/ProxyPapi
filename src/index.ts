@@ -38,6 +38,9 @@ import appsRouter from "./routes/apps.routes";
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/apps", appsRouter);
 
+// Import the queue worker
+import startQueueWorker from "./workers/queue.workers";
+
 // Port and database URI
 const port = process.env.PORT || 8000;
 const db = process.env.MONGODB_URI;
@@ -52,6 +55,8 @@ mongoose
   .connect(db)
   .then(() => {
     console.log("App connected to database.");
+    // Start the queue worker after connecting to the database
+    startQueueWorker();
     app.listen(port, () => {
       console.log(`App is listening on port ${port}`);
     });

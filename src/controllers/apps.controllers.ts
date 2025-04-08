@@ -4,7 +4,7 @@ import App from "../models/App.models";
 import { Request, Response } from "express";
 import { IUser } from "../models/User.models";
 import axios from "axios";
-import https from "https";
+import { tokenBucketRateLimiter } from "../utils/rateLimiter.utils";
 
 // Extend the Request type locally
 interface CustomRequest extends Request {
@@ -64,7 +64,9 @@ export const proxyRequest = asyncHandler(async (req, res) => {
   let targetUrl = `${baseURL}${targetPath}`;
 
   // Prepare headers for the request
-  const headers = { ...req.headers };
+  const headers = Object.fromEntries(
+    Object.entries(req.headers).filter(([_, value]) => typeof value === "string") as [string, string][]
+  );
   delete headers["host"]; // Remove host header to avoid conflicts
   delete headers["content-length"]; // Let axios recalculate this
 
@@ -99,6 +101,29 @@ export const proxyRequest = asyncHandler(async (req, res) => {
   console.log("Target URL:", targetUrl.replace(apiKey, "[REDACTED]")); // Log URL without exposing the API key
   console.log("Headers:", Object.keys(headers)); // Log header keys only for security
   console.log("Body structure:", req.body ? Object.keys(req.body) : "empty"); // Log body structure without revealing content
+
+  // Prepare request details for rate limiting and queuing
+  const requestDetails = {
+    method: req.method,
+    url: targetUrl,
+    headers,
+    body: req.body,
+  };
+
+  // Apply rate limiting
+  const { allowed, remaining } = await tokenBucketRateLimiter(
+    appId,
+    app.rateLimit,
+    requestDetails
+  );
+
+  if (!allowed) {
+    return res.status(429).json({
+      error: "Rate limit exceeded",
+      message: "Your request has been queued and will be processed shortly.",
+      remainingTokens: remaining,
+    });
+  }
 
   // Forward the request to the target API with SSL verification enabled
   try {
