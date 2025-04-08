@@ -5,6 +5,7 @@ import { Request, Response } from "express";
 import { IUser } from "../models/User.models";
 import axios from "axios";
 import { tokenBucketRateLimiter } from "../utils/rateLimiter.utils";
+import { queueLengthGauge, requestCounter, requestDurationHistogram, tokenGauge } from "../utils/metrics.utils";
 
 // Extend the Request type locally
 interface CustomRequest extends Request {
@@ -44,12 +45,14 @@ export const addApp = asyncHandler(
 );
 
 export const proxyRequest = asyncHandler(async (req, res) => {
+  const start = Date.now(); // Start timer for latency tracking
   const { appId } = req.params;
 
   // Find the app by appId
   const app = await App.findOne({ appId });
 
   if (!app) {
+    requestCounter.inc({ status: "failure" }); // Increment failure counter
     return res.status(404).json({ error: "App not found" });
   }
 
@@ -79,22 +82,19 @@ export const proxyRequest = asyncHandler(async (req, res) => {
       apiKey.substring(0, 5) + "..." + apiKey.substring(apiKey.length - 5)
     );
   } else {
+    requestCounter.inc({ status: "failure" }); // Increment failure counter
     return res.status(400).json({ error: "Authorization header is missing" });
   }
 
   // Add the API key based on the app's configuration
   if (apiKeyInHeader) {
-    // Use the Authorization header for APIs like OpenAI
     headers["Authorization"] = `Bearer ${apiKey}`;
   } else if (apiKeyInQuery) {
-    // Add API key as a query parameter for Google APIs
     const separator = targetUrl.includes("?") ? "&" : "?";
     targetUrl = `${targetUrl}${separator}key=${apiKey}`;
-    // Remove authorization headers to avoid conflicts
     delete headers["authorization"];
     delete headers["x-goog-api-key"];
   } else {
-    // Default behavior: Forward the request as-is
     console.warn("No API key handling configured for this app.");
   }
 
@@ -111,13 +111,14 @@ export const proxyRequest = asyncHandler(async (req, res) => {
   };
 
   // Apply rate limiting
-  const { allowed, remaining } = await tokenBucketRateLimiter(
-    appId,
-    app.rateLimit,
-    requestDetails
-  );
+  const { allowed, remaining } = await tokenBucketRateLimiter(appId, app.rateLimit, requestDetails);
+
+  // Update metrics
+  tokenGauge.set({ appId }, remaining); // Track tokens remaining
+  queueLengthGauge.set({ appId }, app.queue?.length || 0); // Track queue length
 
   if (!allowed) {
+    requestCounter.inc({ status: "queued" }); // Increment queued counter
     return res.status(429).json({
       error: "Rate limit exceeded",
       message: "Your request has been queued and will be processed shortly.",
@@ -129,39 +130,34 @@ export const proxyRequest = asyncHandler(async (req, res) => {
   try {
     console.log(`Making ${req.method} request to ${baseURL}...`);
 
-    // Use standard axios without the custom httpsAgent
     const response = await axios({
       method: req.method,
       url: targetUrl,
       headers,
       data: req.body,
-      validateStatus: function (status) {
-        // Accept all status codes to properly handle API errors
-        return true;
-      },
+      validateStatus: () => true, // Accept all status codes to handle API errors
     });
 
+    const duration = (Date.now() - start) / 1000; // Calculate duration in seconds
+    requestDurationHistogram.observe(duration); // Track request duration
+    requestCounter.inc({ status: "success" }); // Increment success counter
+
     console.log("Response received with status:", response.status);
-    // Return the target API's response to the client
     res.status(response.status).json(response.data);
   } catch (error) {
-    if (error instanceof Error) {
-      console.error("Error forwarding request:", error.message);
-    } else {
-      console.error("Error forwarding request:", error);
-    }
+    const duration = (Date.now() - start) / 1000; // Calculate duration in seconds
+    requestDurationHistogram.observe(duration); // Track request duration
+    requestCounter.inc({ status: "failure" }); // Increment failure counter
 
     if (axios.isAxiosError(error) && error.response) {
       console.error("API response status:", error.response.status);
       console.error("API response data:", error.response.data);
-      // Forward the target API's error response to the client
       res.status(error.response.status).json(error.response.data);
     } else {
       res.status(500).json({ error: "Failed to forward request" });
     }
   }
 });
-
 export const getUserApps = asyncHandler(
   async (req: CustomRequest, res: Response) => {
     if (!req.user) {

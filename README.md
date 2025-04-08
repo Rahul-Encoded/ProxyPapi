@@ -4,7 +4,9 @@ _Your API's ultimate wingman — handles rate limits so you don’t get ghosted 
 
 ## 📌 Overview
 
-**ProxyPapi** is a proxy API service that transparently manages rate limits for third-party APIs. Acting as an intermediary, it handles API key authentication, rate-limiting enforcement, and request forwarding, so developers can plug and play without stressing about request throttling.
+**ProxyPapi** is a robust proxy API service designed to transparently manage rate limits for third-party APIs. Acting as an intermediary, it handles API key authentication, enforces rate-limiting policies, forwards requests, and ensures response integrity. Developers can seamlessly integrate with ProxyPapi without worrying about request throttling or exceeding rate limits.
+
+ProxyPapi also provides real-time monitoring and analytics through Prometheus and Grafana integration, enabling developers to track API usage, performance, and queue statistics effectively.
 
 ---
 
@@ -12,19 +14,46 @@ _Your API's ultimate wingman — handles rate limits so you don’t get ghosted 
 
 - **Backend:** Express.js, TypeScript  
 - **Database:** MongoDB (with Mongoose ODM)  
-- **Auth:** API key-based  
-- **Rate Limiting:** Custom strategies (Token Bucket for now; more to come 👀)  
+- **Auth:** API Key-Based Authentication  
+- **Rate Limiting:** Custom Strategies (Token Bucket implemented; more strategies planned: Fixed Window, Sliding Log, Leaky Bucket)  
+- **Monitoring:** Prometheus Metrics + Grafana Dashboards  
 
 ---
 
 ## 🚀 Features
 
-- 🔑 API Key Authentication
-- 🧠 App (3rd-party API) Registration
-- 🌀 Transparent Proxying with full request/response integrity
-- ⏳ Customizable Rate Limiting per App
-- 🕓 Smart Queuing when rate limits hit
-- 📢 Queue Status Feedback
+### 🔐 **Authentication & Security**
+- **API Key Generation:** Secure API keys are issued upon user registration.
+- **API Key Validation:** All requests require a valid `x-api-key` header for authentication.
+
+### 🏗️ **App Registration**
+- Register third-party APIs (e.g., OpenAI, Gemini) to be proxied through ProxyPapi.
+- Configure custom rate-limiting strategies per app.
+
+### 🌀 **Transparent Proxying**
+- Forward all requests to the corresponding registered third-party API while maintaining headers and query parameters.
+- Ensure full request/response integrity, including error handling.
+
+### ⏳ **Customizable Rate Limiting**
+- **Token Bucket Strategy:** Each app gets a "bucket" with limited tokens. Requests consume tokens, which refill at regular intervals.
+- **Configurable Parameters:**
+  - `maxRequests`: Number of tokens in the bucket.
+  - `windowMs`: Refill window duration in milliseconds.
+
+### 🕓 **Rate Limit Exceeded Response**
+When the rate limit is exceeded:
+```json
+{
+    "error": "Rate limit exceeded",
+    "message": "Your request has been queued and will be processed shortly.",
+    "remainingTokens": 0
+}
+```
+
+### 📡 **Dynamic API Key Handling**
+- Supports different API key mechanisms dynamically:
+  - For **OpenAI**, the `Authorization` header is used (`Bearer <API_KEY>`).
+  - For **Gemini**, the API key is converted into a query parameter (`key=<API_KEY>`).
 
 ---
 
@@ -55,7 +84,7 @@ npm run dev
 
 ## 📬 API Endpoints
 
-### 🔐 Auth & API Key
+### 🔐 **Auth & API Key**
 
 #### `POST /register`
 Register a user and receive an API key.
@@ -76,11 +105,11 @@ Register a user and receive an API key.
 
 ---
 
-### 🏗️ App Registration
+### 🏗️ **App Registration**
 
 #### `POST /apps/register`
 
-Register a third-party API you want to proxy through ProxyPapi.
+Register a third-party API to be proxied through ProxyPapi.
 
 **Headers:**
 - `x-api-key: YOUR_API_KEY`
@@ -107,7 +136,7 @@ Register a third-party API you want to proxy through ProxyPapi.
 
 ---
 
-### 🌀 Proxy Requests
+### 🌀 **Proxy Requests**
 
 #### `ANY /apis/:appId/*`
 
@@ -129,95 +158,84 @@ https://api.openai.com/v1/completions
 
 ---
 
-## ⛔ Rate Limiting Strategy
+### 🪄 **Dynamic API Key Handling**
 
-### 🪙 Token Bucket (default)
-
-Each app gets a "bucket" with limited tokens. Each request consumes a token. Buckets refill at regular intervals.
-
-**Configurable Parameters:**
-- `maxRequests` – number of tokens
-- `windowMs` – refill window in milliseconds
-
----
-
-## 🧠 Request Queuing
-
-When limits are hit, requests go into a queue instead of getting yeeted with a 429.
-
-- Requests are retried automatically when the window resets.
-- Queued requests receive a `202 Accepted` response with a status tracking ID.
-
-### ✅ Status Endpoint (Coming Soon)
-Check queue status using:
+#### Example: OpenAI
+For OpenAI, the `Authorization` header is passed as-is:
 ```http
-GET /queue/:requestId
+Authorization: Bearer YOUR_OPENAI_API_KEY
+```
+
+#### Example: Gemini
+For Gemini, the API key is automatically converted into a query parameter:
+```http
+?key=YOUR_GEMINI_API_KEY
 ```
 
 ---
 
-## 📈 Monitoring & Analytics
+## 📊 Monitoring & Metrics
 
-_Coming Soon_  
-**📝 Placeholder for screenshots / demo:**  
-> _Add screenshots or terminal logs showing usage patterns and rate limiting in action_
+### Prometheus Metrics
+
+ProxyPapi exposes metrics at the `/metrics` endpoint for Prometheus scraping. Metrics include:
+
+- **Request Count:** `proxy_request_total`
+- **Remaining Tokens:** `proxy_tokens_remaining`
+- **Request Durations:** `proxy_request_duration_seconds`
+
+### Grafana Dashboards
+
+Visualize API usage, performance, and queue statistics using Grafana. Import the pre-built dashboard or create your own.
 
 ---
 
 ## 🧪 Example Requests & Usage
 
-_Coming Soon_  
-**📝 Placeholder for Postman collection, curl examples, etc.**
+Use the provided Postman collection to test ProxyPapi endpoints:
+
+👉 [Postman Collection](https://app.getpostman.com/join-team?invite_code=ceea0d83d93248724204ab59074ba1bda82d9fa503d4cb79e6271f7c18afa57f)
 
 ---
 
-## ⚙️ Rate Limit Config Updates
+## 🧑‍💻 Development Notes
 
-_Coming Soon_  
-**📝 Placeholder for instructions/screenshots on updating rate limit settings**
+### 📋 Assumptions Made
+- One API key per user for simplicity (can be extended to per-app keys).
+- Rate limits are configured at the app level, not the user level.
+- Token Bucket is the first implemented rate-limiting strategy.
 
----
-
-## 🧙‍♂️ Assumptions Made
-
-- One API key per user for simplicity (can be extended to per-app keys)
-- All rate limits are configured at app-level, not user-level
-- Token Bucket is the first implemented strategy
-
----
-
-## 📦 Directory Structure
+### 📂 Directory Structure
 
 ```bash
 ProxyPapi/
 ├── src/
-│   ├── controllers/
-│   ├── middlewares/
-│   ├── models/
-│   ├── routes/
-│   ├── services/
-│   └── utils/
-├── types
-├── .env
-├── tsconfig.json
-├── package.json
-└── README.md
+│   ├── controllers/        # Handles business logic
+│   ├── middlewares/        # Authentication, rate limiting, etc.
+│   ├── models/             # Database schemas
+│   ├── routes/             # API routes
+│   ├── services/           # Core services (e.g., rate limiting, queuing)
+│   ├── utils/              # Utility functions (e.g., metrics, helpers)
+│   └── workers/            # Background workers (e.g., queue processing)
+├── types                   # TypeScript type definitions
+├── .env                    # Environment variables
+├── prometheus.yml          # Prometheus configuration file
+├── tsconfig.json           # TypeScript configuration
+├── package.json            # Node.js dependencies
+└── README.md               # This file
 ```
 
 ---
 
-## 🌟 Bonus Ideas (On the roadmap)
+## 🌟 Bonus Ideas (Roadmap)
 
-- Multiple rate-limiting strategies (fixed window, sliding log, leaky bucket)
-- Request priority levels
-- API usage dashboard
-- WebSocket updates for queued request statuses
-- Analytics + error logs
+- **Multiple Rate-Limiting Strategies:** Implement Fixed Window, Sliding Log, and Leaky Bucket strategies.
+- **Request Priority Levels:** Allow users to prioritize certain requests over others.
+- **API Usage Dashboard:** Provide a web-based dashboard for monitoring API usage and performance.
+- **Analytics + Error Logs:** Detailed logs and analytics for debugging and optimization.
 
 ---
 
 ## 💬 Wanna Contribute?
 
 Pull up with a PR or suggest a feature — let’s make ProxyPapi the MVP of rate limiting. 😎
-
----

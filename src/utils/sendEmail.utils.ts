@@ -8,8 +8,6 @@ dotenv.config({
 
 //Debugging
 console.log("Loaded environment variables:");
-console.log("ID:", process.env.ID);
-console.log("PASSWORD:", process.env.PASSWORD);
 
 const transporter = nodemailer.createTransport({
 	host: 'smtp.ethereal.email',

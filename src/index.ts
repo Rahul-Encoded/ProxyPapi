@@ -38,8 +38,20 @@ import appsRouter from "./routes/apps.routes";
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/apps", appsRouter);
 
+import { register } from "./utils/metrics.utils";
+
+// Metrics route for Prometheus
+app.get("/metrics", async (req, res) => {
+  try {
+    res.set("Content-Type", register.contentType);
+    res.end(await register.metrics());
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch metrics" });
+  }
+});
+
 // Import the queue worker
-import startQueueWorker from "./workers/queue.workers";
+import { startQueueWorker } from "./workers/queue.workers";
 
 // Port and database URI
 const port = process.env.PORT || 8000;

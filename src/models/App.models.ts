@@ -42,7 +42,7 @@ const AppSchema: Schema<IApp> = new Schema(
     apiKeyInHeader: { type: Boolean, default: false },
     apiKeyInQuery: { type: Boolean, default: false },
     rateLimiterState: {
-      tokens: { type: Number, default: 0 }, // Default to 0 tokens
+      tokens: { type: Number, default: 1 }, // Default to 1 tokens
       lastRefill: { type: Number, default: Date.now }, // Default to current timestamp
     },
     queue: [
